@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pulsegen-client"
+version = "0.1.0"
+description = "Client for Qynit.PulseGen.Server"
+authors = ["kaho <kaho0769@qq.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "pulsegen_client"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.24"
+msgpack = "^1.0.5"
+requests = "^2.31.0"
+
+
+[tool.poetry.group.dev.dependencies]
+matplotlib = "^3.7.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
