@@ -34,11 +34,16 @@ if __name__ == "__main__":
     t0 = perf_counter()
 
     builder = RequestBuilder()
-    builder.add_channel("ch1", 130e6, 2e9, 0, 100000, -4)
-    builder.add_channel("ch2", 210e6, 1e9, 100e-9, 50000, -4)
+    builder.add_channel("ch1", 0e6, 2e9, 0, 100000, -4)
+    builder.add_channel("ch2", 0, 1e9, 100e-9, 50000, -4)
+    x = np.linspace(0, np.pi, 11)
+    y = np.sin(x)
+    xx = np.linspace(-0.5, 0.5, 11)
+    builder.add_interpolated_shape("halfcos", xx, y)
     for i in range(900):
-        builder.play(i * 50e-9, "ch1", "hann", 30e-9, 10e-9, 0, 0, 0.5, 0.5e-9)
-        builder.play(i * 50e-9, "ch2", "hann", 30e-9, 10e-9, 0, 0, 0.3, 0.5e-9)
+        builder.play(i * 50e-9, "ch1", 0.5, "hann", 45e-9, 0, 0.5e-9)
+        builder.play(i * 50e-9, "ch2", 0.3, "halfcos", 30e-9)
+        builder.shift_phase("ch1", 0.25)
     job = builder.build()
 
     t1 = perf_counter()

@@ -266,12 +266,18 @@ class RequestBuilder:
     ) -> None:
         """Add a channel.
 
+        The alignment level determines the alignment of all pulses on the channel. A
+        value of :math:`n` means that all pulses will be aligned to a multiple of
+        :math:`2^n` samples. Negative values are allowed, and will result in
+        alignment to a fraction of a sample.
+
         :param name: The name of the channel.
         :param base_freq: The base frequency of the channel.
         :param sample_rate: The sample rate of the channel.
         :param delay: The delay of the channel.
         :param length: The length of the channel.
         :param align_level: The alignment level of the channel.
+        :raises ValueError: If the channel name already exists.
         """
         if name in self._channel_ids:
             raise ValueError(f"Channel name {name} already exists")
@@ -288,30 +294,50 @@ class RequestBuilder:
         )
         self._channel_ids[name] = channel_id
 
+    def add_interpolated_shape(
+        self,
+        name: str,
+        x_array: Iterable[float],
+        y_array: Iterable[float],
+    ):
+        """Add an interpolated shape.
+
+        :param name: The name of the shape.
+        :param x_array: The x values of the shape. Should be between -0.5 and 0.5.
+        :param y_array: The y values of the shape.
+        :raises ValueError: If the shape name already exists.
+        """
+        if name in self._shape_ids:
+            raise ValueError(f"Shape name {name} already exists")
+        shape_id = len(self._shapes)
+        self._shapes.append(InterpolatedShape(x_array, y_array))
+        self._shape_ids[name] = shape_id
+
     def play(
         self,
         time: float,
         channel_name: str,
+        amplitude: float,
         shape_name: str,
         width: float,
-        plateau: float,
-        frequency: float,
-        phase: float,
-        amplitude: float,
-        drag_coef: float,
+        plateau: float = 0,
+        drag_coef: float = 0,
+        frequency: float = 0,
+        phase: float = 0,
     ) -> None:
         """Play a pulse.
 
         :param time: The time at which to play the pulse.
         :param channel_name: The name of the channel on which to play the pulse.
+        :param amplitude: The amplitude of the pulse.
         :param shape_name: The name of the shape of the pulse. Can be "rect", "hann",
             or "triangle".
         :param width: The width of the pulse.
         :param plateau: The plateau of the pulse.
+        :param drag_coef: The drag coefficient of the pulse.
         :param frequency: Additional frequency of the pulse.
         :param phase: Additional phase of the pulse.
-        :param amplitude: The amplitude of the pulse.
-        :param drag_coef: The drag coefficient of the pulse.
+        :raises KeyError: If the channel or shape name does not exist.
         """
         channel_id = self._channel_ids[channel_name]
         shape_id = self._shape_ids[shape_name]
@@ -334,6 +360,7 @@ class RequestBuilder:
 
         :param channel_name: The name of the channel on which to shift the phase.
         :param phase: The phase to shift by.
+        :raises KeyError: If the channel name does not exist.
         """
         channel_id = self._channel_ids[channel_name]
         self._instructions.append(ShiftPhase(channel_id, phase))
@@ -344,6 +371,7 @@ class RequestBuilder:
         :param time: The time at which to set the phase.
         :param channel_name: The name of the channel on which to set the phase.
         :param phase: The phase to set.
+        :raises KeyError: If the channel name does not exist.
         """
         channel_id = self._channel_ids[channel_name]
         self._instructions.append(SetPhase(time, channel_id, phase))
@@ -354,6 +382,7 @@ class RequestBuilder:
         :param time: The time at which to shift the frequency.
         :param channel_name: The name of the channel on which to shift the frequency.
         :param frequency: The frequency to shift by.
+        :raises KeyError: If the channel name does not exist.
         """
         channel_id = self._channel_ids[channel_name]
         self._instructions.append(ShiftFrequency(time, channel_id, frequency))
@@ -364,6 +393,7 @@ class RequestBuilder:
         :param time: The time at which to set the frequency.
         :param channel_name: The name of the channel on which to set the frequency.
         :param frequency: The frequency to set.
+        :raises KeyError: If the channel name does not exist.
         """
         channel_id = self._channel_ids[channel_name]
         self._instructions.append(SetFrequency(time, channel_id, frequency))
@@ -374,6 +404,7 @@ class RequestBuilder:
         :param time: The time at which to swap the phase.
         :param channel_name1: The name of the first channel.
         :param channel_name2: The name of the second channel.
+        :raises KeyError: If the channel name does not exist.
         """
         channel_id1 = self._channel_ids[channel_name1]
         channel_id2 = self._channel_ids[channel_name2]

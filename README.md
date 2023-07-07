@@ -26,6 +26,7 @@ dotnet run --urls http://localhost:5200 --project .\src\Qynit.PulseGen.Server -c
 Then, run the following code in python
 
 ```python
+import numpy as np
 from matplotlib import pyplot as plt
 from pulsegen_client import PulseGenClient, RequestBuilder
 
@@ -33,12 +34,17 @@ builder = RequestBuilder()
 
 # channel_name, carrier_freq, sample_rate, delay, number_of_points, alignment_level
 builder.add_channel("ch1", 130e6, 2e9, 0, 100000, -4)
-builder.add_channel("ch2", 210e6, 1e9, 100e-9, 50000, -4)
+builder.add_channel("ch2", 0, 1e9, 100e-9, 50000, -4)
+x = np.linspace(0, np.pi, 11)
+y = np.sin(x)
+xx = np.linspace(-0.5, 0.5, 11)
+# x values should be in the range of [-0.5, 0.5]
+builder.add_interpolated_shape("halfcos", xx, y)
 
 for i in range(900):
-    # start_time, channel_name, shape_name, width, plateau, additional_freq, additional_phase, amplitude, drag_coefficient
-    builder.play(i * 50e-9, "ch1", "hann", 30e-9, 10e-9, 0, 0, 0.5, 0.5e-9)
-    builder.play(i * 50e-9, "ch2", "hann", 30e-9, 10e-9, 0, 0, 0.3, 0.5e-9)
+    # start_time, channel_name, amplitude, shape_name, width, [plateau, drag_coef, additional_freq, additional_phase]
+    builder.play(i * 50e-9, "ch1", 0.5, "hann", 45e-9, 0, 0.5e-9)
+    builder.play(i * 50e-9, "ch2", 0.3, "halfcos", 30e-9)
     # channel_name, phase
     # phase is in number of cycles. 0.1 means 0.1 * 2 * pi
     builder.shift_phase("ch1", 0.1)
