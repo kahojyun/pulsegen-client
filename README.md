@@ -45,7 +45,7 @@ for i in range(900):
     builder.shift_phase("ch2", -0.1)
 req = builder.build()
 
-client = PulseGenClient(port=5249)
+client = PulseGenClient(port=5200)
 result = client.run(req)
 
 # result is a dictionary of channel_name -> (I array, Q array)
