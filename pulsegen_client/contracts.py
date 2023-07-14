@@ -1,23 +1,258 @@
-"""Contract classes for pulse generation requests."""
+"""Data contracts for the pulsegen service."""
 
-from typing import Iterable
+from typing import ClassVar, Iterable
 
 import msgpack
 import numpy as np
-from attrs import field, frozen
+from attrs import astuple, field, frozen
 
-from ._channels import ChannelInfo
-from ._msgbase import MsgObject
-from ._pulse_instructions import (
-    Instruction,
-    Play,
-    SetFrequency,
-    SetPhase,
-    ShiftFrequency,
-    ShiftPhase,
-    SwapPhase,
-)
-from ._pulse_shapes import HannShape, InterpolatedShape, ShapeInfo, TriangleShape
+__all__ = [
+    "MsgObject",
+    "UnionObject",
+    "ChannelInfo",
+    "Instruction",
+    "Play",
+    "ShiftPhase",
+    "SetPhase",
+    "ShiftFrequency",
+    "SetFrequency",
+    "SwapPhase",
+    "ShapeInfo",
+    "HannShape",
+    "TriangleShape",
+    "InterpolatedShape",
+    "PulseGenRequest",
+    "RequestBuilder",
+    "unpack_response",
+]
+
+
+@frozen
+class MsgObject:
+    """Base class for all message objects."""
+
+    @property
+    def data(self) -> tuple:
+        """The data of the message object to be serialized."""
+        return astuple(self, recurse=False)
+
+    def packb(self) -> bytes:
+        """Serialize the message object to bytes in msgpack format."""
+
+        def encode(obj: MsgObject):
+            return obj.data
+
+        return msgpack.packb(self, default=encode)  # type: ignore
+
+
+@frozen
+class UnionObject(MsgObject):
+    """Base class for all union objects.
+
+    A union object is a message object that can be one of several types.
+    """
+
+    TYPE_ID: ClassVar[int]
+    """The type ID of the union object."""
+
+    @property
+    def data(self) -> tuple:
+        return (self.TYPE_ID, super().data)
+
+
+@frozen
+class ChannelInfo(MsgObject):
+    """Information about a channel.
+
+    :param name: The name of the channel.
+    :param base_freq: The base frequency of the channel.
+    :param sample_rate: The sample rate of the channel.
+    :param delay: The delay of the channel.
+    :param length: The length of the channel.
+    :param align_level: The alignment level of the channel.
+    """
+
+    name: str
+    """The name of the channel."""
+    base_freq: float
+    """The base frequency of the channel."""
+    sample_rate: float
+    """The sample rate of the channel."""
+    delay: float
+    """The delay of the channel."""
+    length: int
+    """The length of the channel."""
+    align_level: int
+    """The alignment level of the channel."""
+
+
+@frozen
+class Instruction(UnionObject):
+    """An instruction."""
+
+
+@frozen
+class Play(Instruction):
+    """Play a pulse on a channel.
+
+    :param time: The time at which to play the pulse.
+    :param channel_id: The ID of the channel on which to play the pulse.
+    :param shape_id: The ID of the shape to play.
+    :param width: The width of the pulse.
+    :param plateau: The plateau of the pulse.
+    :param frequency: The frequency of the pulse.
+    :param phase: The phase of the pulse.
+    :param amplitude: The amplitude of the pulse.
+    :param drag_coef: The drag coefficient of the pulse.
+    """
+
+    TYPE_ID = 0
+
+    time: float
+    """The time at which to play the pulse."""
+    channel_id: int
+    """The ID of the channel on which to play the pulse."""
+    shape_id: int
+    """The ID of the shape to play."""
+    width: float
+    """The width of the pulse."""
+    plateau: float
+    """The plateau of the pulse."""
+    frequency: float
+    """The frequency of the pulse."""
+    phase: float
+    """The phase of the pulse."""
+    amplitude: float
+    """The amplitude of the pulse."""
+    drag_coef: float
+    """The drag coefficient of the pulse."""
+
+
+@frozen
+class ShiftPhase(Instruction):
+    """Shift the phase of a channel.
+
+    :param channel_id: The ID of the channel on which to shift the phase.
+    :param phase: The phase to shift by.
+    """
+
+    TYPE_ID = 1
+
+    channel_id: int
+    """The ID of the channel on which to shift the phase."""
+    phase: float
+    """The phase to shift by."""
+
+
+@frozen
+class SetPhase(Instruction):
+    """Set the phase of a channel.
+
+    :param time: The time at which to set the phase.
+    :param channel_id: The ID of the channel on which to set the phase.
+    :param phase: The phase to set.
+    """
+
+    TYPE_ID = 2
+
+    time: float
+    """The time at which to set the phase."""
+    channel_id: int
+    """The ID of the channel on which to set the phase."""
+    phase: float
+    """The phase to set."""
+
+
+@frozen
+class ShiftFrequency(Instruction):
+    """Shift the frequency of a channel.
+
+    :param time: The time at which to shift the frequency.
+    :param channel_id: The ID of the channel on which to shift the frequency.
+    :param frequency: The frequency to shift by.
+    """
+
+    TYPE_ID = 3
+
+    time: float
+    """The time at which to shift the frequency."""
+    channel_id: int
+    """The ID of the channel on which to shift the frequency."""
+    frequency: float
+    """The frequency to shift by."""
+
+
+@frozen
+class SetFrequency(Instruction):
+    """Set the frequency of a channel.
+
+    :param time: The time at which to set the frequency.
+    :param channel_id: The ID of the channel on which to set the frequency.
+    :param frequency: The frequency to set.
+    """
+
+    TYPE_ID = 4
+
+    time: float
+    """The time at which to set the frequency."""
+    channel_id: int
+    """The ID of the channel on which to set the frequency."""
+    frequency: float
+    """The frequency to set."""
+
+
+@frozen
+class SwapPhase(Instruction):
+    """Swap the phase of two channels.
+
+    :param time: The time at which to swap the phase.
+    :param channel_id1: The ID of the first channel.
+    :param channel_id2: The ID of the second channel.
+    """
+
+    TYPE_ID = 5
+
+    time: float
+    """The time at which to swap the phase."""
+    channel_id1: int
+    """The ID of the first channel."""
+    channel_id2: int
+    """The ID of the second channel."""
+
+
+@frozen
+class ShapeInfo(UnionObject):
+    """Information about a shape."""
+
+
+@frozen
+class HannShape(ShapeInfo):
+    """A Hann shape."""
+
+    TYPE_ID = 0
+
+
+@frozen
+class TriangleShape(ShapeInfo):
+    """A triangle shape."""
+
+    TYPE_ID = 1
+
+
+@frozen
+class InterpolatedShape(ShapeInfo):
+    """An interpolated shape.
+
+    :param x_array: The x values of the shape.
+    :param y_array: The y values of the shape.
+    """
+
+    TYPE_ID = 2
+
+    x_array: list[float] = field(converter=list[float])
+    """The x values of the shape."""
+    y_array: list[float] = field(converter=list[float])
+    """The y values of the shape."""
 
 
 @frozen
@@ -41,7 +276,6 @@ class RequestBuilder:
     """A builder for pulse generation requests.
 
     .. note::
-
         All phase values are in number of cycles. For example, a phase of 0.25 means
         pi/2 radians.
     """

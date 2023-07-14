@@ -20,7 +20,7 @@ First, start the server following the instruction in
 [Qynit.PulseGen.Server](https://github.com/kahojyun/Qynit.PulseGen)
 
 ```shell
-dotnet run --urls http://localhost:5200 --project .\src\Qynit.PulseGen.Server -c Release
+dotnet run --urls http://localhost:5200 --project ./src/Qynit.PulseGen.Server -c Release
 ```
 
 Then, run the following code in python

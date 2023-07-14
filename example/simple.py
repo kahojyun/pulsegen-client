@@ -13,7 +13,8 @@ import requests
 from aiohttp import ClientSession
 from matplotlib import pyplot as plt
 
-from pulsegen_client import PulseGenAsyncClient, PulseGenClient, RequestBuilder
+from pulsegen_client.client import PulseGenAsyncClient, PulseGenClient
+from pulsegen_client.contracts import RequestBuilder
 
 PORT = 5200
 

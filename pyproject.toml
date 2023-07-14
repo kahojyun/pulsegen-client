@@ -18,6 +18,13 @@ attrs = "^23.1.0"
 
 [tool.poetry.group.dev.dependencies]
 matplotlib = "^3.7.2"
+ipython = "^7"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.1"
+myst-parser = "^2.0.0"
+sphinx-autoapi = "^2.1.1"
+furo = "^2023.5.20"
 
 [build-system]
 requires = ["poetry-core"]

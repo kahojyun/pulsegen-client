@@ -1,10 +1,12 @@
-"""Implementation of the client for the pulsegen server."""
-
+"""Clients for the pulsegen server.
+"""
 import numpy as np
 from aiohttp import ClientSession
 from requests import Session
 
-from ..contracts import PulseGenRequest, unpack_response
+from pulsegen_client.contracts import PulseGenRequest, unpack_response
+
+__all__ = ["PulseGenClient", "PulseGenAsyncClient"]
 
 
 class PulseGenClient:
@@ -15,7 +17,9 @@ class PulseGenClient:
     :param port: The port of the server.
     """
 
-    def __init__(self, session: Session, hostname="localhost", port=5200) -> None:
+    def __init__(
+        self, session: Session, hostname: str = "localhost", port: int = 5200
+    ) -> None:
         self._hostname = hostname
         self._port = port
         self._session = session
@@ -43,7 +47,9 @@ class PulseGenAsyncClient:
     :param port: The port of the server.
     """
 
-    def __init__(self, session: ClientSession, hostname="localhost", port=5200) -> None:
+    def __init__(
+        self, session: ClientSession, hostname: str = "localhost", port: int = 5200
+    ) -> None:
         self._hostname = hostname
         self._port = port
         self._session = session

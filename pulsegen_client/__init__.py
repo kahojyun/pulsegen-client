@@ -5,12 +5,10 @@ result. There are two clients available: a synchronous client and an asynchronou
 client.
 
 .. note::
-
     All phase values are in number of cycles. For example, a phase of 0.25 means
     pi/2 radians.
 
 .. warning::
-
     This package is still in development and the API may change in the future.
 """
 
