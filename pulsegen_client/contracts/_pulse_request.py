@@ -1,222 +1,26 @@
-"""Data contracts for pulsegen client and server
-"""
+"""Contract classes for pulse generation requests."""
 
 from typing import Iterable
 
 import msgpack
 import numpy as np
+from attrs import field, frozen
+
+from ._channels import ChannelInfo
+from ._msgbase import MsgObject
+from ._pulse_instructions import (
+    Instruction,
+    Play,
+    SetFrequency,
+    SetPhase,
+    ShiftFrequency,
+    ShiftPhase,
+    SwapPhase,
+)
+from ._pulse_shapes import HannShape, InterpolatedShape, ShapeInfo, TriangleShape
 
 
-class MsgObject:
-    """Base class for all message objects."""
-
-    def __init__(self, data: Iterable) -> None:
-        self._data = data
-
-    @property
-    def data(self) -> Iterable:
-        """The data of the message object to be serialized."""
-        return self._data
-
-    def packb(self) -> bytes:
-        """Serialize the message object to bytes in msgpack format."""
-
-        def encode(obj: MsgObject):
-            return obj.data
-
-        return msgpack.packb(self, default=encode)  # type: ignore
-
-
-class UnionObject(MsgObject):
-    """Base class for all union objects.
-
-    A union object is a message object that can be one of several types.
-
-    :param type_id: The ID of the type of the union object.
-    :param data: The data of the union object.
-    """
-
-    def __init__(self, type_id: int, data: Iterable) -> None:
-        super().__init__([type_id, data])
-
-
-class ChannelInfo(MsgObject):
-    """Information about a channel.
-
-    :param name: The name of the channel.
-    :param base_freq: The base frequency of the channel.
-    :param sample_rate: The sample rate of the channel.
-    :param delay: The delay of the channel.
-    :param length: The length of the channel.
-    :param align_level: The alignment level of the channel.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        base_freq: float,
-        sample_rate: float,
-        delay: float,
-        length: int,
-        align_level: int,
-    ) -> None:
-        super().__init__(
-            [
-                name,
-                base_freq,
-                sample_rate,
-                delay,
-                length,
-                align_level,
-            ]
-        )
-        self.name = name
-
-
-class ShapeInfo(UnionObject):
-    """Information about a shape."""
-
-    HANN_SHAPE = 0
-    TRIANGLE_SHAPE = 1
-    INTERPOLATED_SHAPE = 2
-
-
-class HannShape(ShapeInfo):
-    """A Hann shape."""
-
-    def __init__(self) -> None:
-        super().__init__(ShapeInfo.HANN_SHAPE, [])
-
-
-class TriangleShape(ShapeInfo):
-    """A triangle shape."""
-
-    def __init__(self) -> None:
-        super().__init__(ShapeInfo.TRIANGLE_SHAPE, [])
-
-
-class InterpolatedShape(ShapeInfo):
-    """An interpolated shape.
-
-    :param x: The x values of the shape.
-    :param y: The y values of the shape.
-    """
-
-    def __init__(self, x: Iterable[float], y: Iterable[float]) -> None:
-        super().__init__(ShapeInfo.INTERPOLATED_SHAPE, [list(x), list(y)])
-
-
-class Instruction(UnionObject):
-    """An instruction."""
-
-    PLAY = 0
-    SHIFT_PHASE = 1
-    SET_PHASE = 2
-    SHIFT_FREQUENCY = 3
-    SET_FREQUENCY = 4
-    SWAP_PHASE = 5
-
-
-class Play(Instruction):
-    """Play a pulse on a channel.
-
-    :param time: The time at which to play the pulse.
-    :param channel_id: The ID of the channel on which to play the pulse.
-    :param shape_id: The ID of the shape to play.
-    :param width: The width of the pulse.
-    :param plateau: The plateau of the pulse.
-    :param frequency: The frequency of the pulse.
-    :param phase: The phase of the pulse.
-    :param amplitude: The amplitude of the pulse.
-    :param drag_coef: The drag coefficient of the pulse.
-    """
-
-    def __init__(
-        self,
-        time: float,
-        channel_id: int,
-        shape_id: int,
-        width: float,
-        plateau: float,
-        frequency: float,
-        phase: float,
-        amplitude: float,
-        drag_coef: float,
-    ) -> None:
-        super().__init__(
-            Instruction.PLAY,
-            [
-                time,
-                channel_id,
-                shape_id,
-                width,
-                plateau,
-                frequency,
-                phase,
-                amplitude,
-                drag_coef,
-            ],
-        )
-
-
-class ShiftPhase(Instruction):
-    """Shift the phase of a channel.
-
-    :param channel_id: The ID of the channel on which to shift the phase.
-    :param phase: The phase to shift by.
-    """
-
-    def __init__(self, channel_id: int, phase: float) -> None:
-        super().__init__(Instruction.SHIFT_PHASE, [channel_id, phase])
-
-
-class SetPhase(Instruction):
-    """Set the phase of a channel.
-
-    :param time: The time at which to set the phase.
-    :param channel_id: The ID of the channel on which to set the phase.
-    :param phase: The phase to set.
-    """
-
-    def __init__(self, time: float, channel_id: int, phase: float) -> None:
-        super().__init__(Instruction.SET_PHASE, [time, channel_id, phase])
-
-
-class ShiftFrequency(Instruction):
-    """Shift the frequency of a channel.
-
-    :param channel_id: The ID of the channel on which to shift the frequency.
-    :param frequency: The frequency to shift by.
-    """
-
-    def __init__(self, time: float, channel_id: int, frequency: float) -> None:
-        super().__init__(Instruction.SHIFT_FREQUENCY, [time, channel_id, frequency])
-
-
-class SetFrequency(Instruction):
-    """Set the frequency of a channel.
-
-    :param time: The time at which to set the frequency.
-    :param channel_id: The ID of the channel on which to set the frequency.
-    :param frequency: The frequency to set.
-    """
-
-    def __init__(self, time: float, channel_id: int, frequency: float) -> None:
-        super().__init__(Instruction.SET_FREQUENCY, [time, channel_id, frequency])
-
-
-class SwapPhase(Instruction):
-    """Swap the phase of two channels.
-
-    :param time: The time at which to swap the phase.
-    :param channel_id1: The ID of the first channel.
-    :param channel_id2: The ID of the second channel.
-    """
-
-    def __init__(self, time: float, channel_id1: int, channel_id2: int) -> None:
-        super().__init__(Instruction.SWAP_PHASE, [time, channel_id1, channel_id2])
-
-
+@frozen
 class PulseGenRequest(MsgObject):
     """A request to generate a pulse sequence.
 
@@ -225,14 +29,12 @@ class PulseGenRequest(MsgObject):
     :param instructions: The instructions to use.
     """
 
-    def __init__(
-        self,
-        channels: Iterable[ChannelInfo],
-        shapes: Iterable[ShapeInfo],
-        instructions: Iterable[Instruction],
-    ) -> None:
-        self.channels = list(channels)
-        super().__init__([self.channels, list(shapes), list(instructions)])
+    channels: list[ChannelInfo] = field(converter=list[ChannelInfo])
+    """The channels to use."""
+    shapes: list[ShapeInfo] = field(converter=list[ShapeInfo])
+    """The shapes to use."""
+    instructions: list[Instruction] = field(converter=list[Instruction])
+    """The instructions to use."""
 
 
 class RequestBuilder:

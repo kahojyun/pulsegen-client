@@ -34,16 +34,16 @@ if __name__ == "__main__":
     t0 = perf_counter()
 
     builder = RequestBuilder()
-    builder.add_channel("ch1", 0e6, 2e9, 0, 100000, -4)
-    builder.add_channel("ch2", 0, 1e9, 100e-9, 50000, -4)
+    for i in range(50):
+        builder.add_channel(f"ch{i}", i * 5e6, 2e9, 0, 100000, -10)
     x = np.linspace(0, np.pi, 11)
     y = np.sin(x)
     xx = np.linspace(-0.5, 0.5, 11)
     builder.add_interpolated_shape("halfcos", xx, y)
     for i in range(900):
-        builder.play(i * 50e-9, "ch1", 0.5, "hann", 45e-9, 0, 0.5e-9)
-        builder.play(i * 50e-9, "ch2", 0.3, "halfcos", 30e-9)
-        builder.shift_phase("ch1", 0.25)
+        for j in range(50):
+            builder.play(i * 50e-9, f"ch{j}", 0.3, "halfcos", 30e-9)
+            builder.shift_phase(f"ch{j}", 0.25)
     job = builder.build()
 
     t1 = perf_counter()
@@ -60,10 +60,4 @@ if __name__ == "__main__":
     print(f"Synchronous run time: {t2 - t1:.3f}s")
     print(f"Asynchronous run time: {t3 - t2:.3f}s")
 
-    t1 = np.arange(0, 100000) / 2e-9
-    plt.plot(t1, result["ch1"][0])
-    plt.plot(t1, result["ch1"][1])
-    t2 = np.arange(0, 50000) / 1e-9
-    plt.plot(t2, result["ch2"][0])
-    plt.plot(t2, result["ch2"][1])
-    plt.show()
+    print(result.keys())

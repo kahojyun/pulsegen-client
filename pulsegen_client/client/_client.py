@@ -1,11 +1,10 @@
-"""Clients for the pulsegen server.
-"""
+"""Implementation of the client for the pulsegen server."""
 
 import numpy as np
 from aiohttp import ClientSession
 from requests import Session
 
-from pulsegen_client.contracts import PulseGenRequest, unpack_response
+from ..contracts import PulseGenRequest, unpack_response
 
 
 class PulseGenClient:
