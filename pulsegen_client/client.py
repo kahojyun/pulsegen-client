@@ -6,6 +6,7 @@ import requests as _requests
 
 import pulsegen_client.contracts as _cts
 import pulsegen_client.pulse as _pulse
+import pulsegen_client.schedule as _schedule
 
 
 class PulseGenClient:
@@ -34,6 +35,22 @@ class PulseGenClient:
         """
         msg = request.packb()
         url = f"http://{self._hostname}:{self._port}/run"
+        headers = {"Content-Type": "application/msgpack"}
+        response = self._session.post(url, data=msg, headers=headers)
+        response.raise_for_status()
+        return _cts.unpack_response(request.channels, response.content)
+
+    def run_schedule(
+        self, request: _schedule.Request
+    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+        """Run the pulsegen server with the given request.
+
+        :param request: The request to send to the server.
+        :return: The result of the request. The keys are the channel names and the
+            values are tuples of (I, Q) arrays.
+        """
+        msg = request.packb()
+        url = f"http://{self._hostname}:{self._port}/schedule"
         headers = {"Content-Type": "application/msgpack"}
         response = self._session.post(url, data=msg, headers=headers)
         response.raise_for_status()
@@ -69,6 +86,23 @@ class PulseGenAsyncClient:
         """
         msg = request.packb()
         url = f"http://{self._hostname}:{self._port}/run"
+        headers = {"Content-Type": "application/msgpack"}
+        async with self._session.post(url, data=msg, headers=headers) as response:
+            response.raise_for_status()
+            content = await response.read()
+        return _cts.unpack_response(request.channels, content)
+
+    async def run_schedule(
+        self, request: _schedule.Request
+    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+        """Run the pulsegen server with the given request.
+
+        :param request: The request to send to the server.
+        :return: The result of the request. The keys are the channel names and the
+            values are tuples of (I, Q) arrays.
+        """
+        msg = request.packb()
+        url = f"http://{self._hostname}:{self._port}/schedule"
         headers = {"Content-Type": "application/msgpack"}
         async with self._session.post(url, data=msg, headers=headers) as response:
             response.raise_for_status()

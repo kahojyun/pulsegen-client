@@ -70,15 +70,15 @@ class Play(Element):
     :attr:`Alignment.STRETCH`, the duration of the pulse is determined by the
     parent element such as :class:`Grid`.
 
-    :param flexible: Whether the pulse can be shortened or extended.
     :param channel_id: Target channel ID.
+    :param amplitude: The amplitude of the pulse.
     :param shape_id: The shape ID of the pulse.
     :param width: The width of the pulse.
     :param plateau: The plateau of the pulse.
+    :param drag_coef: The drag coefficient of the pulse.
     :param frequency: The frequency of the pulse.
     :param phase: The phase of the pulse in **cycles**.
-    :param amplitude: The amplitude of the pulse.
-    :param drag_coef: The drag coefficient of the pulse.
+    :param flexible: Whether the pulse can be shortened or extended.
 
     :param margin: The margin of the element. If a single value is given, it is
         used for both sides.
@@ -92,24 +92,24 @@ class Play(Element):
 
     TYPE_ID = 0
 
-    flexible: bool = _attrs.field(kw_only=True, default=False)
-    """Whether the plateau can be shortened or extended."""
     channel_id: int
     """Target channel ID."""
+    amplitude: float
+    """The amplitude of the pulse."""
     shape_id: int
     """The shape ID of the pulse."""
     width: float
     """The width of the pulse."""
     plateau: float = _attrs.field(kw_only=True, default=0)
     """The plateau of the pulse."""
+    drag_coef: float = _attrs.field(kw_only=True, default=0)
+    """The drag coefficient of the pulse."""
     frequency: float = _attrs.field(kw_only=True, default=0)
     """The frequency of the pulse."""
     phase: float = _attrs.field(kw_only=True, default=0)
     """The phase of the pulse in **cycles**."""
-    amplitude: float
-    """The amplitude of the pulse."""
-    drag_coef: float = _attrs.field(kw_only=True, default=0)
-    """The drag coefficient of the pulse."""
+    flexible: bool = _attrs.field(kw_only=True, default=False)
+    """Whether the plateau can be shortened or extended."""
 
 
 @_attrs.frozen
@@ -278,6 +278,34 @@ class Barrier(Element):
     """Target channel IDs."""
 
 
+@_attrs.frozen
+class Repeat(Element):
+    """A repeated schedule element.
+
+    :param element: The repeated element.
+    :param count: The number of repetitions.
+    :param spacing: The spacing between repeated elements.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
+
+    TYPE_ID = 7
+
+    element: Element
+    """The repeated element."""
+    count: int
+    """The number of repetitions."""
+    spacing: float = _attrs.field(kw_only=True, default=0)
+    """The spacing between repeated elements."""
+
+
 class ArrangeDirection(_enum.Enum):
     """Direction of arrangement."""
 
@@ -295,8 +323,8 @@ class Stack(Element):
     forwards or backwards. :class:`Barrier` can be used to synchronize
     multiple channels.
 
-    :param direction: The direction of arrangement.
     :param elements: Child elements.
+    :param direction: The direction of arrangement.
 
     :param margin: The margin of the element. If a single value is given, it is
         used for both sides.
@@ -304,46 +332,18 @@ class Stack(Element):
     :param alignment: The alignment of the element.
     :param visibility: Whether the element has effect on the output.
     :param duration: Requested duration of the element.
-    :param max_duration: Maximum duration of the element.
-    :param min_duration: Minimum duration of the element.
-    """
-
-    TYPE_ID = 7
-
-    direction: ArrangeDirection = _attrs.field(
-        kw_only=True, default=ArrangeDirection.BACKWARDS
-    )
-    """The direction of arrangement."""
-    elements: list[Element] = _attrs.field(converter=list[Element])
-    """Child elements."""
-
-
-@_attrs.frozen
-class Repeat(Element):
-    """A repeated schedule element.
-
-    :param spacing: The spacing between repeated elements.
-    :param element: The repeated element.
-    :param count: The number of repetitions.
-
-    :param margin: The margin of the element. If a single value is given, it is
-        used for both sides.
-    :type margin: float | tuple[float, float]
-    :param alignment: The alignment of the element.
-    :param visibility: Whether the element has effect on the output.
-    :param duration: Requested duration of the element.
-    :param max_duration: Maximum duration of the element.
+    :keyword max_duration: Maximum duration of the element.
     :param min_duration: Minimum duration of the element.
     """
 
     TYPE_ID = 8
 
-    spacing: float = _attrs.field(kw_only=True, default=0)
-    """The spacing between repeated elements."""
-    element: Element
-    """The repeated element."""
-    count: int
-    """The number of repetitions."""
+    elements: list[Element] = _attrs.field(converter=list[Element])
+    """Child elements."""
+    direction: ArrangeDirection = _attrs.field(
+        kw_only=True, default=ArrangeDirection.BACKWARDS
+    )
+    """The direction of arrangement."""
 
 
 @_attrs.frozen
@@ -529,10 +529,10 @@ class Grid(Element):
 
     TYPE_ID = 10
 
-    columns: list[GridLength] = _attrs.field(converter=_convert_columns)
-    """Definitions of grid columns."""
     elements: list[Entry] = _attrs.field(converter=_convert_entries)
     """Child elements with grid positioning."""
+    columns: list[GridLength] = _attrs.field(converter=_convert_columns, factory=list)
+    """Definitions of grid columns."""
 
 
 @_attrs.frozen

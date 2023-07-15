@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 
 from pulsegen_client import PulseGenAsyncClient, PulseGenClient, RequestBuilder
 
-PORT = 5200
+PORT = 5249
 
 
 def run_sync(req):
