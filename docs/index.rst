@@ -7,11 +7,10 @@ Welcome to PulseGen Client's documentation!
 ===========================================
 
 .. toctree::
-   :maxdepth: 2
    :caption: Contents:
 
    readme
-   autoapi/index
+   api
 
 Indices and tables
 ==================

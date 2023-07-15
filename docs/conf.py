@@ -13,19 +13,14 @@ author = "Jiahao Yuan"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "autoapi.extension", "sphinx.ext.viewcode"]
-
-autoapi_dirs = ["../pulsegen_client"]
-autoapi_type = "python"
-autoapi_options = [
-    "members",
-    "undoc-members",
-    "show-inheritance",
-    "show-module-summary",
-    "imported-members",
+extensions = [
+    "myst_parser",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
 ]
+
 autodoc_typehints = "description"
-autodoc_class_signature = "separated"
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

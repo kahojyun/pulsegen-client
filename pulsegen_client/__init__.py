@@ -13,6 +13,6 @@ client.
 """
 
 from .client import PulseGenAsyncClient, PulseGenClient
-from .contracts import PulseGenRequest, RequestBuilder
+from .pulse import Request, RequestBuilder
 
-__all__ = ["PulseGenClient", "PulseGenAsyncClient", "PulseGenRequest", "RequestBuilder"]
+__all__ = ["PulseGenClient", "PulseGenAsyncClient", "Request", "RequestBuilder"]
