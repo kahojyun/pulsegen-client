@@ -1,3 +1,5 @@
+"""Classes for pulse scheduling."""
+
 import enum as _enum
 import math as _math
 
@@ -24,7 +26,13 @@ class Alignment(_enum.Enum):
 class Element(_cts.UnionObject):
     """Base class for schedule elements.
 
-    :param margin: The margin of the element.
+    A schedule element is a node in the tree structure of a schedule similar to
+    HTML elements. The design is inspired by `XAML in WPF / WinUI <https://learn.
+    microsoft.com/en-us/windows/apps/design/layout/layouts-with-xaml>`_
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
     :param alignment: The alignment of the element.
     :param visibility: Whether the element has effect on the output.
     :param duration: Requested duration of the element.
@@ -56,7 +64,31 @@ class Element(_cts.UnionObject):
 
 @_attrs.frozen
 class Play(Element):
-    """A pulse play element."""
+    """A pulse play element.
+
+    If :attr:`flexible` is set to ``True`` and :attr:`alignment` is set to
+    :attr:`Alignment.STRETCH`, the duration of the pulse is determined by the
+    parent element such as :class:`Grid`.
+
+    :param flexible: Whether the pulse can be shortened or extended.
+    :param channel_id: Target channel ID.
+    :param shape_id: The shape ID of the pulse.
+    :param width: The width of the pulse.
+    :param plateau: The plateau of the pulse.
+    :param frequency: The frequency of the pulse.
+    :param phase: The phase of the pulse in **cycles**.
+    :param amplitude: The amplitude of the pulse.
+    :param drag_coef: The drag coefficient of the pulse.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 0
 
@@ -68,45 +100,87 @@ class Play(Element):
     """The shape ID of the pulse."""
     width: float
     """The width of the pulse."""
-    plateau: float
+    plateau: float = _attrs.field(kw_only=True, default=0)
     """The plateau of the pulse."""
-    frequency: float
+    frequency: float = _attrs.field(kw_only=True, default=0)
     """The frequency of the pulse."""
-    phase: float
-    """The phase of the pulse."""
+    phase: float = _attrs.field(kw_only=True, default=0)
+    """The phase of the pulse in **cycles**."""
     amplitude: float
     """The amplitude of the pulse."""
-    drag_coef: float
+    drag_coef: float = _attrs.field(kw_only=True, default=0)
     """The drag coefficient of the pulse."""
 
 
 @_attrs.frozen
 class ShiftPhase(Element):
-    """A phase shift element."""
+    """A phase shift element.
+
+    :param channel_id: Target channel ID.
+    :param phase: Delta phase in **cycles**.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 1
 
     channel_id: int
     """Target channel ID."""
     phase: float
-    """Delta phase."""
+    """Delta phase in **cycles**."""
 
 
 @_attrs.frozen
 class SetPhase(Element):
-    """A phase set element."""
+    """A phase set element.
+
+    Currently the effect of set phase instruction is calculated based on the
+    cumulative frequency shift. This may change in the future.
+
+    :param channel_id: Target channel ID.
+    :param phase: Target phase in **cycles**.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 2
 
     channel_id: int
     """Target channel ID."""
     phase: float
-    """Target phase."""
+    """Target phase in **cycles**."""
 
 
 @_attrs.frozen
 class ShiftFrequency(Element):
-    """A frequency shift element."""
+    """A frequency shift element.
+
+    :param channel_id: Target channel ID.
+    :param frequency: Delta frequency.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 3
 
@@ -118,7 +192,20 @@ class ShiftFrequency(Element):
 
 @_attrs.frozen
 class SetFrequency(Element):
-    """A frequency set element."""
+    """A frequency set element.
+
+    :param channel_id: Target channel ID.
+    :param frequency: Target frequency.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 4
 
@@ -130,7 +217,33 @@ class SetFrequency(Element):
 
 @_attrs.frozen
 class SwapPhase(Element):
-    """A phase swap element."""
+    """A phase swap element.
+
+    Let :math:`\\phi_1` and :math:`\\phi_2` be the phases of the two target
+    channels, respectively. The effect of the swap phase instruction is to
+    change the phases to :math:`\\phi_2` and :math:`\\phi_1`, respectively.
+    Currently the phase :math:`\\phi` is defined as
+
+    .. math::
+        \\phi = (f + \\Delta f) t + \\phi_0
+
+    where :math:`f` is the frequency defined in
+    :class:`pulsegen_client.contracts.ChannelInfo`, :math:`\\Delta f` is the
+    frequency shift due to :class:`ShiftFrequency`, and :math:`\\phi_0` is the
+    phase offset due to :class:`ShiftPhase` and other phase instructions.
+
+    :param channel_id1: Target channel ID 1.
+    :param channel_id2: Target channel ID 2.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 5
 
@@ -142,7 +255,22 @@ class SwapPhase(Element):
 
 @_attrs.frozen
 class Barrier(Element):
-    """A barrier element."""
+    """A barrier element.
+
+    A barrier element is a zero-duration no-op element. Useful for aligning
+    elements on different channels in :class:`Stack`.
+
+    :param channel_ids: Target channel IDs.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 6
 
@@ -169,6 +297,15 @@ class Stack(Element):
 
     :param direction: The direction of arrangement.
     :param elements: Child elements.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
     """
 
     TYPE_ID = 7
@@ -183,7 +320,21 @@ class Stack(Element):
 
 @_attrs.frozen
 class Repeat(Element):
-    """A repeated schedule element."""
+    """A repeated schedule element.
+
+    :param spacing: The spacing between repeated elements.
+    :param element: The repeated element.
+    :param count: The number of repetitions.
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     TYPE_ID = 8
 
@@ -197,7 +348,26 @@ class Repeat(Element):
 
 @_attrs.frozen
 class Absolute(Element):
-    """An absolute schedule element."""
+    """An absolute schedule element.
+
+    The child elements are arranged in absolute time. The time of each child
+    element is relative to the start of the absolute schedule. The duration of
+    the absolute schedule is the maximum end time of the child elements.
+
+    :param elements: Child elements with absolute timing. Each item in the list
+        can be either an :class:`Element` or ``(time, element)``. Default
+        ``time`` is 0.
+    :type elements: list[Element | tuple[float, Element] | Entry]
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
+    """
 
     @_attrs.frozen
     class Entry(_cts.MsgObject):
@@ -245,19 +415,7 @@ class GridLength(_cts.MsgObject):
 
     :class:`GridLength` is used to specify the length of a grid column. The
     length can be specified in seconds, as a fraction of the remaining space,
-    or automatically. Can be parsed from a string following formats like
-
-    ``"10e-9"``
-        10 nanoseconds
-
-    ``"*"``
-        1 star
-
-    ``"10*"``
-        10 stars
-
-    ``"auto"``
-        Automatic
+    or automatically.
 
     :param value: The value of the length.
     :param unit: The unit of the length.
@@ -320,9 +478,20 @@ class Grid(Element):
         be specified as a :class:`GridLength`, a string, or a float. See
         :meth:`GridLength.parse` for details.
     :type columns: list[GridLength | str | float]
-    :param elements: Child elements. Each child element has a column index, a
-        span, and an element.
+    :param elements: Child elements with column index and span. Each item in the
+        list can be either :class:`Element`, ``(column, element)`` or
+        ``(column, span, element)``. The default column is 0 and the default
+        span is 1.
     :type elements: list[Element | tuple[int, Element] | tuple[int, int, Element] | Grid.Entry]
+
+    :param margin: The margin of the element. If a single value is given, it is
+        used for both sides.
+    :type margin: float | tuple[float, float]
+    :param alignment: The alignment of the element.
+    :param visibility: Whether the element has effect on the output.
+    :param duration: Requested duration of the element.
+    :param max_duration: Maximum duration of the element.
+    :param min_duration: Minimum duration of the element.
     """
 
     @_attrs.frozen
@@ -368,11 +537,16 @@ class Grid(Element):
 
 @_attrs.frozen
 class Request(_cts.MsgObject):
-    """A schedule request."""
+    """A schedule request.
+
+    :param channels: Information about the channels used in the schedule.
+    :param shapes: Information about the shapes used in the schedule.
+    :param schedule: The root element of the schedule.
+    """
 
     channels: list[_cts.ChannelInfo] = _attrs.field(converter=list[_cts.ChannelInfo])
-    """Channels used in the schedule."""
+    """Information about the channels used in the schedule."""
     shapes: list[_pulse.ShapeInfo] = _attrs.field(converter=list[_pulse.ShapeInfo])
-    """Shapes used in the schedule."""
+    """Information about the shapes used in the schedule."""
     schedule: Element
     """The root element of the schedule."""

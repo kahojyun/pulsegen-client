@@ -1,3 +1,5 @@
+"""Basic pulse generation instructions."""
+
 import typing as _typing
 
 import attrs as _attrs
