@@ -27,7 +27,7 @@ from pulsegen_client.schedule import (
     Stack,
 )
 
-PORT = 5249
+PORT = 5000
 
 
 def run_sync(req: Request):
@@ -87,8 +87,6 @@ if __name__ == "__main__":
     )
 
     job = Request(channels, shapes, schedule)
-    jobb = job.packb()
-    print(len(jobb))
 
     t1 = perf_counter()
 

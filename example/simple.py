@@ -11,11 +11,10 @@ from time import perf_counter
 import numpy as np
 import requests
 from aiohttp import ClientSession
-from matplotlib import pyplot as plt
 
 from pulsegen_client import PulseGenAsyncClient, PulseGenClient, RequestBuilder
 
-PORT = 5249
+PORT = 5000
 
 
 def run_sync(req):

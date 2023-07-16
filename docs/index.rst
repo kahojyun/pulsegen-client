@@ -10,7 +10,9 @@ Welcome to PulseGen Client's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   readme
+   quickstart
+   instruction
+   schedule
    api
 
 Indices and tables
