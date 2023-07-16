@@ -20,7 +20,7 @@ class MsgObject:
     def packb(self) -> bytes:
         """Serialize the message object to bytes in msgpack format."""
 
-        def encode(obj: MsgObject | _enum.Enum):
+        def encode(obj: _typing.Union[MsgObject, _enum.Enum]):
             if isinstance(obj, MsgObject):
                 return obj.data
             if isinstance(obj, _enum.Enum):
@@ -73,7 +73,7 @@ class ChannelInfo(MsgObject):
 
 def unpack_response(
     channels: _typing.Iterable[ChannelInfo], content: bytes
-) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
     """Unpack the binary response from the server.
 
     :param channels: Channel information from the corresponding request.

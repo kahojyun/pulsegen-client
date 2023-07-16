@@ -170,9 +170,9 @@ class InterpolatedShape(ShapeInfo):
 
     TYPE_ID = 2
 
-    x_array: list[float] = _attrs.field(converter=list[float])
+    x_array: _typing.List[float] = _attrs.field(converter=list)
     """The x values of the shape."""
-    y_array: list[float] = _attrs.field(converter=list[float])
+    y_array: _typing.List[float] = _attrs.field(converter=list)
     """The y values of the shape."""
 
 
@@ -185,11 +185,11 @@ class Request(_cts.MsgObject):
     :param instructions: The instructions to use.
     """
 
-    channels: list[_cts.ChannelInfo] = _attrs.field(converter=list[_cts.ChannelInfo])
+    channels: _typing.List[_cts.ChannelInfo] = _attrs.field(converter=list)
     """The channels to use."""
-    shapes: list[ShapeInfo] = _attrs.field(converter=list[ShapeInfo])
+    shapes: _typing.List[ShapeInfo] = _attrs.field(converter=list)
     """The shapes to use."""
-    instructions: list[Instruction] = _attrs.field(converter=list[Instruction])
+    instructions: _typing.List[Instruction] = _attrs.field(converter=list)
     """The instructions to use."""
 
 
@@ -202,15 +202,15 @@ class RequestBuilder:
     """
 
     def __init__(self) -> None:
-        self._channels: list[_cts.ChannelInfo] = []
-        self._channel_ids: dict[str, int] = {}
-        self._shapes: list[ShapeInfo] = [HannShape(), TriangleShape()]
+        self._channels: _typing.List[_cts.ChannelInfo] = []
+        self._channel_ids: _typing.Dict[str, int] = {}
+        self._shapes: _typing.List[ShapeInfo] = [HannShape(), TriangleShape()]
         self._shape_ids = {
             "rect": -1,
             "hann": 0,
             "triangle": 1,
         }
-        self._instructions: list[Instruction] = []
+        self._instructions: _typing.List[Instruction] = []
 
     def add_channel(
         self,

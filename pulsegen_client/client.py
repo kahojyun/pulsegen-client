@@ -1,5 +1,7 @@
 """Clients for the pulsegen server.
 """
+import typing as _typing
+
 import aiohttp as _aiohttp
 import numpy as _np
 import requests as _requests
@@ -26,7 +28,7 @@ class PulseGenClient:
 
     def run(
         self, request: _pulse.Request
-    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.
@@ -42,7 +44,7 @@ class PulseGenClient:
 
     def run_schedule(
         self, request: _schedule.Request
-    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.
@@ -77,7 +79,7 @@ class PulseGenAsyncClient:
 
     async def run(
         self, request: _pulse.Request
-    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.
@@ -94,7 +96,7 @@ class PulseGenAsyncClient:
 
     async def run_schedule(
         self, request: _schedule.Request
-    ) -> dict[str, tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.

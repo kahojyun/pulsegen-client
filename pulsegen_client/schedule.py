@@ -2,6 +2,7 @@
 
 import enum as _enum
 import math as _math
+import typing as _typing
 
 import attrs as _attrs
 
@@ -22,6 +23,14 @@ class Alignment(_enum.Enum):
     """Stretch to fill parent element."""
 
 
+def _convert_margin(
+    margin: _typing.Union[float, _typing.Tuple[float, float]]
+) -> _typing.Tuple[float, float]:
+    if not isinstance(margin, tuple):
+        margin = (margin, margin)
+    return margin
+
+
 @_attrs.frozen
 class Element(_cts.UnionObject):
     """Base class for schedule elements.
@@ -40,13 +49,7 @@ class Element(_cts.UnionObject):
     :param min_duration: Minimum duration of the element.
     """
 
-    @staticmethod
-    def _convert_margin(margin: float | tuple[float, float]) -> tuple[float, float]:
-        if not isinstance(margin, tuple):
-            margin = (margin, margin)
-        return margin
-
-    margin: tuple[float, float] = _attrs.field(
+    margin: _typing.Tuple[float, float] = _attrs.field(
         kw_only=True, default=(0, 0), converter=_convert_margin
     )
     """The margin of the element."""
@@ -54,7 +57,7 @@ class Element(_cts.UnionObject):
     """The alignment of the element."""
     visibility: bool = _attrs.field(kw_only=True, default=True)
     """Whether the element has effect on the output."""
-    duration: float | None = _attrs.field(kw_only=True, default=None)
+    duration: _typing.Optional[float] = _attrs.field(kw_only=True, default=None)
     """Requested duration of the element."""
     max_duration: float = _attrs.field(kw_only=True, default=_math.inf)
     """Maximum duration of the element."""
@@ -274,7 +277,7 @@ class Barrier(Element):
 
     TYPE_ID = 6
 
-    channel_ids: list[int] = _attrs.field(converter=list[int])
+    channel_ids: _typing.List[int] = _attrs.field(converter=list)
     """Target channel IDs."""
 
 
@@ -338,12 +341,45 @@ class Stack(Element):
 
     TYPE_ID = 8
 
-    elements: list[Element] = _attrs.field(converter=list[Element])
+    elements: _typing.List[Element] = _attrs.field(converter=list)
     """Child elements."""
     direction: ArrangeDirection = _attrs.field(
         kw_only=True, default=ArrangeDirection.BACKWARDS
     )
     """The direction of arrangement."""
+
+
+@_attrs.frozen
+class AbsoluteEntry(_cts.MsgObject):
+    """An entry in the absolute schedule."""
+
+    time: float
+    """Time relative to the start of the absolute schedule."""
+    element: Element
+    """The child element."""
+
+    @classmethod
+    def from_tuple(
+        cls, obj: _typing.Union[Element, _typing.Tuple[float, Element], "AbsoluteEntry"]
+    ) -> "AbsoluteEntry":
+        """Create an absolute entry from a tuple.
+
+        :param obj: The object to be converted.
+        :return: The converted object.
+        """
+        if isinstance(obj, Element):
+            return cls(time=0, element=obj)
+        if isinstance(obj, tuple):
+            return cls(time=obj[0], element=obj[1])
+        return obj
+
+
+def _convert_abs_entries(
+    entries: _typing.List[
+        _typing.Union[Element, _typing.Tuple[float, Element], AbsoluteEntry]
+    ]
+) -> _typing.List[AbsoluteEntry]:
+    return [AbsoluteEntry.from_tuple(obj) for obj in entries]
 
 
 @_attrs.frozen
@@ -369,32 +405,9 @@ class Absolute(Element):
     :param min_duration: Minimum duration of the element.
     """
 
-    @_attrs.frozen
-    class Entry(_cts.MsgObject):
-        """An entry in the absolute schedule."""
-
-        time: float
-        """Time relative to the start of the absolute schedule."""
-        element: Element
-        """The child element."""
-
-    @staticmethod
-    def _as_entry(obj: Element | tuple[float, Element] | Entry) -> Entry:
-        if isinstance(obj, Element):
-            return Absolute.Entry(time=0, element=obj)
-        if isinstance(obj, tuple):
-            return Absolute.Entry(time=obj[0], element=obj[1])
-        return obj
-
-    @staticmethod
-    def _convert_entries(
-        entries: list[Element | tuple[float, Element] | Entry]
-    ) -> list[Entry]:
-        return [Absolute._as_entry(obj) for obj in entries]
-
     TYPE_ID = 9
 
-    elements: list[Entry] = _attrs.field(converter=_convert_entries)
+    elements: _typing.List[AbsoluteEntry] = _attrs.field(converter=_convert_abs_entries)
     """Child elements with absolute timing."""
 
 
@@ -442,7 +455,7 @@ class GridLength(_cts.MsgObject):
         return cls(value=value, unit=GridLengthUnit.SECOND)
 
     @classmethod
-    def parse(cls, value: str | float) -> "GridLength":
+    def parse(cls, value: _typing.Union[str, float]) -> "GridLength":
         """Create a grid length from a string or a float.
 
         The value can be one of the following formats:
@@ -471,6 +484,62 @@ class GridLength(_cts.MsgObject):
 
 
 @_attrs.frozen
+class GridEntry(_cts.MsgObject):
+    """An entry in the grid schedule."""
+
+    column: int
+    """The column index."""
+    span: int
+    """The column span."""
+    element: Element
+    """The child element."""
+
+    @classmethod
+    def from_tuple(
+        cls,
+        obj: _typing.Union[
+            Element,
+            _typing.Tuple[int, Element],
+            _typing.Tuple[int, int, Element],
+            "GridEntry",
+        ],
+    ) -> "GridEntry":
+        """Create a grid entry from a tuple.
+
+        :param obj: The tuple to convert.
+        """
+        if isinstance(obj, Element):
+            return cls(column=0, span=1, element=obj)
+        if isinstance(obj, tuple):
+            if len(obj) == 2:
+                return cls(column=obj[0], span=1, element=obj[1])
+            return cls(column=obj[0], span=obj[1], element=obj[2])
+        return obj
+
+
+def _convert_grid_entries(
+    entries: _typing.List[
+        _typing.Union[
+            Element,
+            _typing.Tuple[int, Element],
+            _typing.Tuple[int, int, Element],
+            GridEntry,
+        ]
+    ]
+) -> _typing.List[GridEntry]:
+    return [GridEntry.from_tuple(obj) for obj in entries]
+
+
+def _convert_columns(
+    columns: _typing.List[_typing.Union[GridLength, str, float]]
+) -> _typing.List[GridLength]:
+    return [
+        GridLength.parse(column) if not isinstance(column, GridLength) else column
+        for column in columns
+    ]
+
+
+@_attrs.frozen
 class Grid(Element):
     """A grid schedule element.
 
@@ -494,44 +563,13 @@ class Grid(Element):
     :param min_duration: Minimum duration of the element.
     """
 
-    @_attrs.frozen
-    class Entry(_cts.MsgObject):
-        """An entry in the grid schedule."""
-
-        column: int
-        span: int
-        element: Element
-
-    @staticmethod
-    def _as_entry(
-        obj: Element | tuple[int, Element] | tuple[int, int, Element] | Entry
-    ) -> Entry:
-        if isinstance(obj, Element):
-            return Grid.Entry(column=0, span=1, element=obj)
-        if isinstance(obj, tuple):
-            if len(obj) == 2:
-                return Grid.Entry(column=obj[0], span=1, element=obj[1])
-            return Grid.Entry(column=obj[0], span=obj[1], element=obj[2])
-        return obj
-
-    @staticmethod
-    def _convert_entries(
-        entries: list[Element | tuple[int, Element] | tuple[int, int, Element] | Entry]
-    ) -> list[Entry]:
-        return [Grid._as_entry(obj) for obj in entries]
-
-    @staticmethod
-    def _convert_columns(columns: list[GridLength | str | float]) -> list[GridLength]:
-        return [
-            GridLength.parse(column) if not isinstance(column, GridLength) else column
-            for column in columns
-        ]
-
     TYPE_ID = 10
 
-    elements: list[Entry] = _attrs.field(converter=_convert_entries)
+    elements: _typing.List[GridEntry] = _attrs.field(converter=_convert_grid_entries)
     """Child elements with grid positioning."""
-    columns: list[GridLength] = _attrs.field(converter=_convert_columns, factory=list)
+    columns: _typing.List[GridLength] = _attrs.field(
+        converter=_convert_columns, factory=list
+    )
     """Definitions of grid columns."""
 
 
@@ -544,9 +582,9 @@ class Request(_cts.MsgObject):
     :param schedule: The root element of the schedule.
     """
 
-    channels: list[_cts.ChannelInfo] = _attrs.field(converter=list[_cts.ChannelInfo])
+    channels: _typing.List[_cts.ChannelInfo] = _attrs.field(converter=list)
     """Information about the channels used in the schedule."""
-    shapes: list[_pulse.ShapeInfo] = _attrs.field(converter=list[_pulse.ShapeInfo])
+    shapes: _typing.List[_pulse.ShapeInfo] = _attrs.field(converter=list)
     """Information about the shapes used in the schedule."""
     schedule: Element
     """The root element of the schedule."""

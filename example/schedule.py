@@ -46,8 +46,8 @@ if __name__ == "__main__":
     t0 = perf_counter()
 
     channels = [
-        ChannelInfo("xy0", 150e6, 2e9, 0, 100000, -10),
-        ChannelInfo("xy1", 250e6, 2e9, 0, 100000, -10),
+        ChannelInfo("xy0", 0, 2e9, 0, 100000, -10),
+        ChannelInfo("xy1", 0, 2e9, 0, 100000, -10),
         ChannelInfo("m0", 0, 2e9, 0, 100000, 0),
     ]
     c = {ch.name: i for i, ch in enumerate(channels)}
@@ -63,8 +63,8 @@ if __name__ == "__main__":
         ]
     )
 
-    x0 = Play(c["xy0"], 0.3, s["hann"], 30e-9, drag_coef=5e-10)
-    x1 = Play(c["xy1"], 0.4, s["hann"], 60e-9, drag_coef=3e-10)
+    x0 = Play(c["xy0"], 0.3, s["hann"], 50e-9, drag_coef=5e-10)
+    x1 = Play(c["xy1"], 0.4, s["hann"], 100e-9, drag_coef=3e-10)
     x_group = Grid(
         [
             Stack([x0], alignment=Alignment.CENTER),
