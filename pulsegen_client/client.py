@@ -36,7 +36,7 @@ class PulseGenClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/run"
+        url = f"http://{self._hostname}:{self._port}/api/run"
         headers = {"Content-Type": "application/msgpack"}
         response = self._session.post(url, data=msg, headers=headers)
         response.raise_for_status()
@@ -52,7 +52,7 @@ class PulseGenClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/schedule"
+        url = f"http://{self._hostname}:{self._port}/api/schedule"
         headers = {"Content-Type": "application/msgpack"}
         response = self._session.post(url, data=msg, headers=headers)
         response.raise_for_status()
@@ -87,7 +87,7 @@ class PulseGenAsyncClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/run"
+        url = f"http://{self._hostname}:{self._port}/api/run"
         headers = {"Content-Type": "application/msgpack"}
         async with self._session.post(url, data=msg, headers=headers) as response:
             response.raise_for_status()
@@ -104,7 +104,7 @@ class PulseGenAsyncClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/schedule"
+        url = f"http://{self._hostname}:{self._port}/api/schedule"
         headers = {"Content-Type": "application/msgpack"}
         async with self._session.post(url, data=msg, headers=headers) as response:
             response.raise_for_status()
