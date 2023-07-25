@@ -68,3 +68,12 @@ class ChannelInfo(MsgObject):
     """The length of the channel."""
     align_level: int
     """The alignment level of the channel."""
+
+
+class DataType(_enum.Enum):
+    """Data types for waveforms."""
+
+    FLOAT32 = 0
+    """32-bit floating point."""
+    FLOAT64 = 1
+    """64-bit floating point."""

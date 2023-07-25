@@ -16,7 +16,7 @@ MIME_TYPE = "application/msgpack"
 
 def _unpack_response(
     channels: _typing.Iterable[_cts.ChannelInfo], content: bytes
-) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
+) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _typing.Optional[_np.ndarray]]]:
     """Unpack the binary response from the server.
 
     :param channels: Channel information from the corresponding request.
@@ -27,10 +27,17 @@ def _unpack_response(
     response_obj = _msgpack.unpackb(content)[0]
     result = {}
     for i, channel in enumerate(channels):
-        result[channel.name] = (
-            _np.frombuffer(response_obj[i][0], dtype=_np.float64),
-            _np.frombuffer(response_obj[i][1], dtype=_np.float64),
-        )
+        if response_obj[i][0] == _cts.DataType.FLOAT32.value:
+            dtype = _np.float32
+        else:
+            dtype = _np.float64
+        is_real = response_obj[i][1]
+        data = _np.frombuffer(response_obj[i][2], dtype=dtype)
+        if is_real:
+            result[channel.name] = (data, None)
+        else:
+            data = data.reshape(2, -1)
+            result[channel.name] = (data[0], data[1])
     return result
 
 
@@ -51,7 +58,7 @@ class PulseGenClient:
 
     def run_schedule(
         self, request: _schedule.Request
-    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _typing.Optional[_np.ndarray]]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.
@@ -86,7 +93,7 @@ class PulseGenAsyncClient:
 
     async def run_schedule(
         self, request: _schedule.Request
-    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
+    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _typing.Optional[_np.ndarray]]]:
         """Run the pulsegen server with the given request.
 
         :param request: The request to send to the server.
