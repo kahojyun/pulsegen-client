@@ -19,9 +19,9 @@ PORT = 5000
 
 
 def run_sync(req: Request):
-    session = requests.Session()
-    client = PulseGenClient(session, port=PORT)
-    return client.run_schedule(req)
+    with requests.Session() as session:
+        client = PulseGenClient(session, port=PORT)
+        return client.run_schedule(req)
 
 
 async def run_async(req: Request):

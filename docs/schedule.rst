@@ -3,7 +3,7 @@ Schedule API
 
 .. currentmodule:: pulsegen_client.schedule
 
-Schedule API 使用类似 HTML、XAML 的结构来描述波形序列，用户可以定义基础的波形，然后通过组合的方式来构建复杂的波形序列。基础元素对应于不带时间参数的 :doc:`instruction` 中的指令：
+Schedule API 使用类似 HTML、XAML 的结构来描述波形序列，用户可以定义基础的波形，然后通过组合的方式来构建复杂的波形序列。基础元素有 :doc:`instruction`：
 
 * :class:`Play`
 * :class:`ShiftPhase`
@@ -12,7 +12,7 @@ Schedule API 使用类似 HTML、XAML 的结构来描述波形序列，用户可
 * :class:`SetFrequency`
 * :class:`SwapPhase`
 
-另外还加入了：
+另外还有：
 
 * :class:`Repeat`
     根据指定的次数与间隔重复子元素
@@ -146,3 +146,15 @@ Grid 布局
 .. caution:: 
 
     在布局完成后，会按照子元素插入顺序遍历执行，与布局得到的元素位置无关。
+
+
+波形对齐
+--------
+
+程序在采样包络时会对波形进行对齐，即将波形的起始点对齐到某个单位时间的整数倍。对齐参数在 :meth:`RequestBuilder.add_channel` 的 ``align_level`` 中指定，假设给定值为 :math:`n`，采样间隔为 :math:`\Delta t`，则对齐的单位时间为 :math:`2^n\Delta t`，比如 ``align_level`` 为 -4，则单位时间为 :math:`2^{-4}\Delta t`，即 :math:`\Delta t / 16`。
+
+
+计算结果
+--------
+
+目前程序会返回一个字典，键为通道名，值为一个元组，元组中的第一个元素为 I 通道的采样值，第二个元素为 Q 通道的采样值。

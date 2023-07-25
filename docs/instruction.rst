@@ -1,34 +1,28 @@
-Instruction API
-===============
+Instruction
+===========
 
-.. currentmodule:: pulsegen_client.pulse
+.. currentmodule:: pulsegen_client.schedule
 
-Instruction API 通过一系列的指令控制波形的生成，目前支持的指令有：
+PulseGen 通过一系列的指令控制波形的生成，目前支持的指令有：
 
 :class:`Play`
-    在给定时间点在指定通道上添加波形
+    在指定通道上添加波形
 
 :class:`ShiftPhase`
     偏置指定通道的相位
 
 :class:`SetPhase`
-    在给定时间点设置指定通道的相位
+    设置指定通道的相位
 
 :class:`ShiftFrequency`
-    在给定时间点偏置指定通道的频率
+    偏置指定通道的频率
 
 :class:`SetFrequency`
-    在给定时间点设置指定通道的频率
+    设置指定通道的频率
 
 :class:`SwapPhase`
-    在给定时间点交换两个通道的相位
+    交换两个通道的相位
 
-
-使用示例如下：
-
-.. literalinclude:: ../example/simple.py
-    :language: python3
-    :linenos:
 
 
 相位计算
@@ -73,21 +67,3 @@ Instruction API 通过一系列的指令控制波形的生成，目前支持的�
     \phi_c^{(2)'}(\tau) = \phi_c^{(1)}(\tau)
 
 
-波形对齐
---------
-
-程序在采样包络时会对波形进行对齐，即将波形的起始点对齐到某个单位时间的整数倍。对齐参数在 :meth:`RequestBuilder.add_channel` 的 ``align_level`` 中指定，假设给定值为 :math:`n`，采样间隔为 :math:`\Delta t`，则对齐的单位时间为 :math:`2^n\Delta t`，比如 ``align_level`` 为 -4，则单位时间为 :math:`2^{-4}\Delta t`，即 :math:`\Delta t / 16`。
-
-
-执行顺序
---------
-
-.. warning:: 
-
-    按照指令的添加顺序执行而不是按照指令附带的时间参数顺序执行。
-
-
-计算结果
---------
-
-目前程序会返回一个字典，键为通道名，值为一个元组，元组中的第一个元素为 I 通道的采样值，第二个元素为 Q 通道的采样值。
