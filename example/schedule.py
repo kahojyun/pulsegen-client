@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 from pulsegen_client import PulseGenAsyncClient, PulseGenClient
 from pulsegen_client.contracts import ChannelInfo
 from pulsegen_client.pulse import HannShape
+from pulsegen_client.runner import run_schedule
 from pulsegen_client.schedule import (
     Absolute,
     Alignment,
@@ -90,11 +91,12 @@ if __name__ == "__main__":
 
     t1 = perf_counter()
 
-    result = run_sync(job)
+    # result = run_sync(job)
 
     t2 = perf_counter()
 
-    result = asyncio.run(run_async(job))
+    # result = asyncio.run(run_async(job))
+    result = run_schedule(job)
 
     t3 = perf_counter()
 
