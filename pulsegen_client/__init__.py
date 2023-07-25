@@ -13,6 +13,44 @@ client.
 """
 
 from .client import PulseGenAsyncClient, PulseGenClient
-from .pulse import Request, RequestBuilder
+from .contracts import ChannelInfo
+from .runner import run_schedule
+from .schedule import (
+    Absolute,
+    Alignment,
+    Barrier,
+    Grid,
+    Play,
+    Repeat,
+    Request,
+    SetFrequency,
+    SetPhase,
+    ShiftFrequency,
+    ShiftPhase,
+    Stack,
+    SwapPhase,
+)
+from .shape import HannShape, InterpolatedShape, TriangleShape
 
-__all__ = ["PulseGenClient", "PulseGenAsyncClient", "Request", "RequestBuilder"]
+__all__ = [
+    "PulseGenAsyncClient",
+    "PulseGenClient",
+    "ChannelInfo",
+    "run_schedule",
+    "Absolute",
+    "Alignment",
+    "Barrier",
+    "Grid",
+    "Play",
+    "Repeat",
+    "Request",
+    "SetFrequency",
+    "SetPhase",
+    "ShiftFrequency",
+    "ShiftPhase",
+    "Stack",
+    "SwapPhase",
+    "HannShape",
+    "InterpolatedShape",
+    "TriangleShape",
+]

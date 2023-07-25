@@ -7,7 +7,7 @@ import typing as _typing
 import attrs as _attrs
 
 import pulsegen_client.contracts as _cts
-import pulsegen_client.pulse as _pulse
+import pulsegen_client.shape as _shape
 
 
 class Alignment(_enum.Enum):
@@ -29,6 +29,16 @@ def _convert_margin(
     if not isinstance(margin, tuple):
         margin = (margin, margin)
     return margin
+
+
+def _convert_alignment(
+    alignment: _typing.Union[
+        _typing.Literal["end", "start", "center", "stretch"], Alignment
+    ]
+) -> Alignment:
+    if isinstance(alignment, str):
+        return Alignment[alignment.upper()]
+    return alignment
 
 
 @_attrs.frozen
@@ -53,7 +63,9 @@ class Element(_cts.UnionObject):
         kw_only=True, default=(0, 0), converter=_convert_margin
     )
     """The margin of the element."""
-    alignment: Alignment = _attrs.field(kw_only=True, default=Alignment.END)
+    alignment: Alignment = _attrs.field(
+        kw_only=True, default=Alignment.END, converter=_convert_alignment
+    )
     """The alignment of the element."""
     visibility: bool = _attrs.field(kw_only=True, default=True)
     """Whether the element has effect on the output."""
@@ -263,6 +275,9 @@ class Barrier(Element):
     A barrier element is a zero-duration no-op element. Useful for aligning
     elements on different channels in :class:`Stack`.
 
+    If :attr:`channel_ids` is empty, the barrier is applied to all channels in
+    its parent element.
+
     :param channel_ids: Target channel IDs.
 
     :param margin: The margin of the element. If a single value is given, it is
@@ -277,7 +292,7 @@ class Barrier(Element):
 
     TYPE_ID = 6
 
-    channel_ids: _typing.List[int] = _attrs.field(converter=list)
+    channel_ids: _typing.List[int] = _attrs.field(converter=list, factory=list)
     """Target channel IDs."""
 
 
@@ -301,7 +316,7 @@ class Repeat(Element):
 
     TYPE_ID = 7
 
-    element: Element
+    child: Element
     """The repeated element."""
     count: int
     """The number of repetitions."""
@@ -316,6 +331,14 @@ class ArrangeDirection(_enum.Enum):
     """Arrange from the end of the schedule."""
     FORWARDS = 1
     """Arrange from the start of the schedule."""
+
+
+def _convert_direction(
+    direction: _typing.Union[_typing.Literal["backwards", "forwards"], ArrangeDirection]
+) -> ArrangeDirection:
+    if isinstance(direction, str):
+        return ArrangeDirection[direction.upper()]
+    return direction
 
 
 @_attrs.frozen
@@ -341,12 +364,20 @@ class Stack(Element):
 
     TYPE_ID = 8
 
-    elements: _typing.List[Element] = _attrs.field(converter=list)
+    children: _typing.List[Element] = _attrs.field(converter=list, factory=list)
     """Child elements."""
     direction: ArrangeDirection = _attrs.field(
-        kw_only=True, default=ArrangeDirection.BACKWARDS
+        kw_only=True, default=ArrangeDirection.BACKWARDS, converter=_convert_direction
     )
     """The direction of arrangement."""
+
+    def with_children(self, *children: Element) -> "Stack":
+        """Create a new stack with different children.
+
+        :param children: The new children.
+        :return: The new stack.
+        """
+        return _attrs.evolve(self, children=children)
 
 
 @_attrs.frozen
@@ -407,8 +438,20 @@ class Absolute(Element):
 
     TYPE_ID = 9
 
-    elements: _typing.List[AbsoluteEntry] = _attrs.field(converter=_convert_abs_entries)
+    children: _typing.List[AbsoluteEntry] = _attrs.field(
+        converter=_convert_abs_entries, factory=list
+    )
     """Child elements with absolute timing."""
+
+    def with_children(
+        self, *children: _typing.Union[Element, _typing.Tuple[float, Element]]
+    ) -> "Absolute":
+        """Create a new absolute schedule with different children.
+
+        :param children: The new children.
+        :return: The new absolute schedule.
+        """
+        return _attrs.evolve(self, children=children)
 
 
 class GridLengthUnit(_enum.Enum):
@@ -565,12 +608,29 @@ class Grid(Element):
 
     TYPE_ID = 10
 
-    elements: _typing.List[GridEntry] = _attrs.field(converter=_convert_grid_entries)
+    children: _typing.List[GridEntry] = _attrs.field(
+        converter=_convert_grid_entries, factory=list
+    )
     """Child elements with grid positioning."""
     columns: _typing.List[GridLength] = _attrs.field(
         converter=_convert_columns, factory=list
     )
     """Definitions of grid columns."""
+
+    def with_children(
+        self,
+        *children: _typing.Union[
+            Element,
+            _typing.Tuple[int, Element],
+            _typing.Tuple[int, int, Element],
+        ],
+    ) -> "Grid":
+        """Create a new grid schedule with different children.
+
+        :param children: The new children.
+        :return: The new grid schedule.
+        """
+        return _attrs.evolve(self, children=children)
 
 
 @_attrs.frozen
@@ -584,7 +644,7 @@ class Request(_cts.MsgObject):
 
     channels: _typing.List[_cts.ChannelInfo] = _attrs.field(converter=list)
     """Information about the channels used in the schedule."""
-    shapes: _typing.List[_pulse.ShapeInfo] = _attrs.field(converter=list)
+    shapes: _typing.List[_shape.ShapeInfo] = _attrs.field(converter=list)
     """Information about the shapes used in the schedule."""
     schedule: Element
     """The root element of the schedule."""

@@ -3,12 +3,35 @@
 import typing as _typing
 
 import aiohttp as _aiohttp
+import msgpack as _msgpack
 import numpy as _np
 import requests as _requests
 
 import pulsegen_client.contracts as _cts
-import pulsegen_client.pulse as _pulse
 import pulsegen_client.schedule as _schedule
+
+SCHEDULE_ENDPOINT = "/api/schedule"
+MIME_TYPE = "application/msgpack"
+
+
+def _unpack_response(
+    channels: _typing.Iterable[_cts.ChannelInfo], content: bytes
+) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
+    """Unpack the binary response from the server.
+
+    :param channels: Channel information from the corresponding request.
+    :param content: The binary response.
+    :return: The unpacked response. The keys are the channel names and the
+        values are tuples of (I, Q) arrays.
+    """
+    response_obj = _msgpack.unpackb(content)[0]
+    result = {}
+    for i, channel in enumerate(channels):
+        result[channel.name] = (
+            _np.frombuffer(response_obj[i][0], dtype=_np.float64),
+            _np.frombuffer(response_obj[i][1], dtype=_np.float64),
+        )
+    return result
 
 
 class PulseGenClient:
@@ -20,27 +43,11 @@ class PulseGenClient:
     """
 
     def __init__(
-        self, session: _requests.Session, hostname: str = "localhost", port: int = 5200
+        self, session: _requests.Session, hostname: str = "localhost", port: int = 5000
     ) -> None:
         self._hostname = hostname
         self._port = port
         self._session = session
-
-    def run(
-        self, request: _pulse.Request
-    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
-        """Run the pulsegen server with the given request.
-
-        :param request: The request to send to the server.
-        :return: The result of the request. The keys are the channel names and the
-            values are tuples of (I, Q) arrays.
-        """
-        msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/api/run"
-        headers = {"Content-Type": "application/msgpack"}
-        response = self._session.post(url, data=msg, headers=headers)
-        response.raise_for_status()
-        return _cts.unpack_response(request.channels, response.content)
 
     def run_schedule(
         self, request: _schedule.Request
@@ -52,11 +59,11 @@ class PulseGenClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/api/schedule"
-        headers = {"Content-Type": "application/msgpack"}
+        url = f"http://{self._hostname}:{self._port}{SCHEDULE_ENDPOINT}"
+        headers = {"Content-Type": MIME_TYPE}
         response = self._session.post(url, data=msg, headers=headers)
         response.raise_for_status()
-        return _cts.unpack_response(request.channels, response.content)
+        return _unpack_response(request.channels, response.content)
 
 
 class PulseGenAsyncClient:
@@ -71,28 +78,11 @@ class PulseGenAsyncClient:
         self,
         session: _aiohttp.ClientSession,
         hostname: str = "localhost",
-        port: int = 5200,
+        port: int = 5000,
     ) -> None:
         self._hostname = hostname
         self._port = port
         self._session = session
-
-    async def run(
-        self, request: _pulse.Request
-    ) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
-        """Run the pulsegen server with the given request.
-
-        :param request: The request to send to the server.
-        :return: The result of the request. The keys are the channel names and the
-            values are tuples of (I, Q) arrays.
-        """
-        msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/api/run"
-        headers = {"Content-Type": "application/msgpack"}
-        async with self._session.post(url, data=msg, headers=headers) as response:
-            response.raise_for_status()
-            content = await response.read()
-        return _cts.unpack_response(request.channels, content)
 
     async def run_schedule(
         self, request: _schedule.Request
@@ -104,9 +94,9 @@ class PulseGenAsyncClient:
             values are tuples of (I, Q) arrays.
         """
         msg = request.packb()
-        url = f"http://{self._hostname}:{self._port}/api/schedule"
-        headers = {"Content-Type": "application/msgpack"}
+        url = f"http://{self._hostname}:{self._port}{SCHEDULE_ENDPOINT}"
+        headers = {"Content-Type": MIME_TYPE}
         async with self._session.post(url, data=msg, headers=headers) as response:
             response.raise_for_status()
             content = await response.read()
-        return _cts.unpack_response(request.channels, content)
+        return _unpack_response(request.channels, content)

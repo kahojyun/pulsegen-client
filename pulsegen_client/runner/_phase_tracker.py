@@ -2,8 +2,8 @@ from typing import List
 
 from attrs import define, field
 
-from pulsegen_client.runner.pulse_list import PulseList
-from pulsegen_client.runner.shape import Envelope
+from pulsegen_client.runner._pulse_list import PulseList
+from pulsegen_client.runner._shape_impl import Envelope
 
 
 @define

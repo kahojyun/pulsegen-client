@@ -4,8 +4,8 @@ from collections import defaultdict
 from typing import Iterator, List, Optional, Set, Tuple
 
 import pulsegen_client.schedule as schedule
-from pulsegen_client.runner.phase_tracker import PhaseTracker
-from pulsegen_client.runner.shape import Envelope, PulseShape
+from pulsegen_client.runner._phase_tracker import PhaseTracker
+from pulsegen_client.runner._shape_impl import Envelope, PulseShape
 
 
 class LayoutManager(ABC):
@@ -172,7 +172,7 @@ class RepeatLayoutManager(LayoutManager):
     ) -> None:
         super().__init__(element)
         self.element: schedule.Repeat
-        self.child_layout = create_layout_manager(element.element)
+        self.child_layout = create_layout_manager(element.child)
         self.channels = self.child_layout.channels
 
     def measure_override(self, available_duration: float) -> float:
@@ -212,7 +212,7 @@ class StackLayoutManager(LayoutManager):
     ) -> None:
         super().__init__(element)
         self.element: schedule.Stack
-        self.child_layouts = [create_layout_manager(e) for e in element.elements]
+        self.child_layouts = [create_layout_manager(e) for e in element.children]
         self.channels = set().union(*(c.channels for c in self.child_layouts))
 
     def render_override(
@@ -293,13 +293,13 @@ class AbsoluteLayoutManager(LayoutManager):
         super().__init__(element)
         self.element: schedule.Absolute
         self.child_layouts = [
-            create_layout_manager(e.element) for e in element.elements
+            create_layout_manager(e.element) for e in element.children
         ]
         self.channels = set().union(*(c.channels for c in self.child_layouts))
 
     def measure_override(self, available_duration: float) -> float:
         max_time = 0.0
-        child_times = (e.time for e in self.element.elements)
+        child_times = (e.time for e in self.element.children)
         for child_time, child in zip(child_times, self.child_layouts):
             child.measure(available_duration)
             assert child.desired_duration is not None
@@ -307,7 +307,7 @@ class AbsoluteLayoutManager(LayoutManager):
         return max_time
 
     def arrange_override(self, time: float, final_duration: float) -> float:
-        child_times = (e.time for e in self.element.elements)
+        child_times = (e.time for e in self.element.children)
         for child_time, child in zip(child_times, self.child_layouts):
             assert child.desired_duration is not None
             child.arrange(child_time, child.desired_duration)
@@ -325,7 +325,7 @@ class GridLayoutManager(LayoutManager):
         super().__init__(element)
         self.element: schedule.Grid
         self.child_layouts = [
-            create_layout_manager(e.element) for e in element.elements
+            create_layout_manager(e.element) for e in element.children
         ]
         self.channels = set().union(*(c.channels for c in self.child_layouts))
         self._min_column_width: Optional[List[float]] = None
@@ -347,7 +347,7 @@ class GridLayoutManager(LayoutManager):
             for c in self._columns
         ]
         for child, (column, span) in zip(
-            self.child_layouts, ((e.column, e.span) for e in self.element.elements)
+            self.child_layouts, ((e.column, e.span) for e in self.element.children)
         ):
             actual_column = min(column, len(colsizes) - 1)
             actual_span = min(span, len(colsizes) - actual_column)
@@ -360,7 +360,7 @@ class GridLayoutManager(LayoutManager):
                 colsizes[actual_column], child.desired_duration
             )
         for child, (column, span) in zip(
-            self.child_layouts, ((e.column, e.span) for e in self.element.elements)
+            self.child_layouts, ((e.column, e.span) for e in self.element.children)
         ):
             actual_column = min(column, len(colsizes) - 1)
             actual_span = min(span, len(colsizes) - actual_column)
@@ -409,7 +409,7 @@ class GridLayoutManager(LayoutManager):
             colstarts.append(colstarts[-1] + colsizes[i])
         for child, (column, span, align) in zip(
             self.child_layouts,
-            ((e.column, e.span, e.element.alignment) for e in self.element.elements),
+            ((e.column, e.span, e.element.alignment) for e in self.element.children),
         ):
             actual_column = min(column, len(colsizes) - 1)
             actual_span = min(span, len(colsizes) - actual_column)

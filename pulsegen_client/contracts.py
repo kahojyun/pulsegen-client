@@ -5,7 +5,6 @@ import typing as _typing
 
 import attrs as _attrs
 import msgpack as _msgpack
-import numpy as _np
 
 
 @_attrs.frozen
@@ -69,23 +68,3 @@ class ChannelInfo(MsgObject):
     """The length of the channel."""
     align_level: int
     """The alignment level of the channel."""
-
-
-def unpack_response(
-    channels: _typing.Iterable[ChannelInfo], content: bytes
-) -> _typing.Dict[str, _typing.Tuple[_np.ndarray, _np.ndarray]]:
-    """Unpack the binary response from the server.
-
-    :param channels: Channel information from the corresponding request.
-    :param content: The binary response.
-    :return: The unpacked response. The keys are the channel names and the
-        values are tuples of (I, Q) arrays.
-    """
-    response_obj = _msgpack.unpackb(content)[0]
-    result = {}
-    for i, channel in enumerate(channels):
-        result[channel.name] = (
-            _np.frombuffer(response_obj[i][0], dtype=_np.float64),
-            _np.frombuffer(response_obj[i][1], dtype=_np.float64),
-        )
-    return result

@@ -5,7 +5,7 @@ from typing import Iterable, MutableSequence, Optional
 import numpy as np
 from attrs import frozen
 
-from pulsegen_client.runner.shape import Envelope
+from pulsegen_client.runner._shape_impl import Envelope
 
 
 @frozen

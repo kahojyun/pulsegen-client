@@ -6,7 +6,7 @@ import numpy.typing as npt
 import scipy.interpolate as interp
 from attrs import frozen
 
-import pulsegen_client.pulse as pulse
+import pulsegen_client.shape as shape
 
 
 class PulseShape(ABC):
@@ -77,11 +77,11 @@ class Envelope:
         )
 
 
-def get_shape(info: pulse.ShapeInfo) -> PulseShape:
-    if isinstance(info, pulse.HannShape):
+def get_shape(info: shape.ShapeInfo) -> PulseShape:
+    if isinstance(info, shape.HannShape):
         return HannShape()
-    if isinstance(info, pulse.TriangleShape):
+    if isinstance(info, shape.TriangleShape):
         return TriangleShape()
-    if isinstance(info, pulse.InterpolatedShape):
+    if isinstance(info, shape.InterpolatedShape):
         return InterpolatedShape(info.x_array, info.y_array)
     raise ValueError(f"Unknown shape type: {type(info)}")
