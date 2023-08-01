@@ -45,6 +45,77 @@ class UnionObject(MsgObject):
 
 
 @_attrs.frozen
+class Biquad(MsgObject):
+    """A biquad filter.
+
+    :param b0: The b0 coefficient.
+    :param b1: The b1 coefficient.
+    :param b2: The b2 coefficient.
+    :param a1: The a1 coefficient.
+    :param a2: The a2 coefficient.
+    """
+
+    b0: float
+    """The b0 coefficient."""
+    b1: float
+    """The b1 coefficient."""
+    b2: float
+    """The b2 coefficient."""
+    a1: float
+    """The a1 coefficient."""
+    a2: float
+    """The a2 coefficient."""
+
+
+@_attrs.frozen
+class IqCalibration(MsgObject):
+    """IQ calibration data.
+
+    The calibration data consists of a 2x2 transformation matrix and an 2x1 offset
+    vector. The transformation matrix is applied first, followed by the offset vector.
+
+    .. math::
+        \\begin{bmatrix}
+            I_{out} \\\\
+            Q_{out}
+        \\end{bmatrix} =
+        \\begin{bmatrix}
+            a & b \\\\
+            c & d
+        \\end{bmatrix}
+        \\begin{bmatrix}
+            I_{in} \\\\
+            Q_{in}
+        \\end{bmatrix} +
+        \\begin{bmatrix}
+            i_{offset} \\\\
+            q_{offset}
+        \\end{bmatrix}
+
+    
+    :param a: The a coefficient.
+    :param b: The b coefficient.
+    :param c: The c coefficient.
+    :param d: The d coefficient.
+    :param i_offset: The I offset.
+    :param q_offset: The Q offset.
+    """
+
+    a: float
+    """The a coefficient."""
+    b: float
+    """The b coefficient."""
+    c: float
+    """The c coefficient."""
+    d: float
+    """The d coefficient."""
+    i_offset: float = 0
+    """The I offset."""
+    q_offset: float = 0
+    """The Q offset."""
+
+
+@_attrs.frozen
 class ChannelInfo(MsgObject):
     """Information about a channel.
 
@@ -54,6 +125,8 @@ class ChannelInfo(MsgObject):
     :param delay: The delay of the channel.
     :param length: The length of the channel.
     :param align_level: The alignment level of the channel.
+    :param iir: The biquad filter chain of the channel.
+    :param fir: The FIR filter of the channel.
     """
 
     name: str
@@ -68,6 +141,11 @@ class ChannelInfo(MsgObject):
     """The length of the channel."""
     align_level: int
     """The alignment level of the channel."""
+    iq_calibration: _typing.Optional[IqCalibration] = None
+    iir: _typing.List[Biquad] = _attrs.field(factory=list, converter=list)
+    """The biquad filter chain of the channel."""
+    fir: _typing.List[float] = _attrs.field(factory=list, converter=list)
+    """The FIR filter of the channel."""
 
 
 class DataType(_enum.Enum):
