@@ -9,7 +9,12 @@ import msgpack as _msgpack
 
 @_attrs.frozen
 class MsgObject:
-    """Base class for all message objects."""
+    """Base class for all message objects.
+
+    .. note::
+        The order of the fields must be the same as the order of the fields in the
+        corresponding data class in the server.
+    """
 
     @property
     def data(self) -> tuple:
@@ -155,3 +160,23 @@ class DataType(_enum.Enum):
     """32-bit floating point."""
     FLOAT64 = 1
     """64-bit floating point."""
+
+
+@_attrs.frozen
+class Options(MsgObject):
+    """Options for PulseGen.
+
+    :param time_tolerance: The time tolerance of the scheduler.
+    :param amp_tolerance: The amplitude tolerance in waveform calculation.
+    :param phase_tolerance: The phase tolerance in waveform calculation.
+    :param allow_oversize: Whether to allow arranging schedules with duration shorter than desired.
+    """
+
+    time_tolerance: float = 1e-12
+    """The time tolerance of the scheduler."""
+    amp_tolerance: float = 0.1 / 2**16
+    """The amplitude tolerance in waveform calculation."""
+    phase_tolerance: float = 1e-4
+    """The phase tolerance in waveform calculation."""
+    allow_oversize: bool = False
+    """Whether to allow arranging schedules with duration shorter than desired."""

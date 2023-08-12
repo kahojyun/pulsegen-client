@@ -640,6 +640,7 @@ class Request(_cts.MsgObject):
     :param channels: Information about the channels used in the schedule.
     :param shapes: Information about the shapes used in the schedule.
     :param schedule: The root element of the schedule.
+    :param options: Options for the PulseGen service.
     """
 
     channels: _typing.List[_cts.ChannelInfo] = _attrs.field(converter=list)
@@ -648,3 +649,5 @@ class Request(_cts.MsgObject):
     """Information about the shapes used in the schedule."""
     schedule: Element
     """The root element of the schedule."""
+    options: _cts.Options = _attrs.field(factory=_cts.Options)
+    """Options for the PulseGen service."""

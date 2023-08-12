@@ -51,7 +51,7 @@ if __name__ == "__main__":
     t0 = perf_counter()
 
     bq = get_biquad(-0.1, 20e-9, 2e9)
-    fir = signal.firwin(100, 100e6, fs=2e9)
+    fir = signal.firwin(5, 100e6, fs=2e9)
     channels = [
         ChannelInfo(
             "xy0",
@@ -106,7 +106,9 @@ if __name__ == "__main__":
         measure,
     )
 
-    job = Request(channels, shapes, schedule)
+    options = Options(time_tolerance=1e-13)
+
+    job = Request(channels, shapes, schedule, options=options)
 
     t1 = perf_counter()
 

@@ -13,7 +13,7 @@ client.
 """
 
 from .client import PulseGenAsyncClient, PulseGenClient
-from .contracts import Biquad, ChannelInfo, IqCalibration
+from .contracts import Biquad, ChannelInfo, IqCalibration, Options
 from .runner import run_schedule
 from .schedule import (
     Absolute,
@@ -38,6 +38,7 @@ __all__ = [
     "ChannelInfo",
     "Biquad",
     "IqCalibration",
+    "Options",
     "run_schedule",
     "Absolute",
     "Alignment",
