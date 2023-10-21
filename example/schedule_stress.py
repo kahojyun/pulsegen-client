@@ -7,22 +7,23 @@
 
 import asyncio
 from itertools import cycle
+import time
 
 import numpy as np
 from aiohttp import ClientSession
 
 from pulsegen_client import *
 
-PORT = 5000
+PORT = 5249
 
 
 async def gen_n(n: int, client: PulseGenAsyncClient):
-    channels = [
-        ChannelInfo("xy0", 0, 2e9, 0, 100000, -10),
-        ChannelInfo("xy1", 0, 2e9, 0, 100000, -10),
-        ChannelInfo("u0", 0, 2e9, 0, 100000, -10),
-        ChannelInfo("m0", 0, 2e9, 0, 100000, 0),
-    ]
+    nxy = 64
+    nu = 2*nxy
+    nm = nxy//8
+    channels = [ChannelInfo(f"xy{i}", 3e6*i, 2e9, 0, 100000, -10) for i in range(nxy)] + [
+        ChannelInfo(f"u{i}", 0, 2e9, 0, 100000, -10) for i in range(nu)] + [
+        ChannelInfo(f"m{i}", 0, 2e9, 0, 100000, 0) for i in range(nm)]
     c = {ch.name: i for i, ch in enumerate(channels)}
     halfcos = np.sin(np.linspace(0, np.pi, 10))
     shapes = [
@@ -32,19 +33,13 @@ async def gen_n(n: int, client: PulseGenAsyncClient):
     s = {"hann": 0, "rect": -1, "halfcos": 1}
 
     measure = Absolute().with_children(
-        Play(c["m0"], 0.1, s["hann"], 30e-9, plateau=1e-6, frequency=123e6),
-        Play(c["m0"], 0.15, s["hann"], 30e-9, plateau=1e-6, frequency=-233e6),
+        *(Play(c[f"m{i}"], 0.1, s["hann"], 30e-9, plateau=1e-6, frequency=20e6*i) for i in range(nm))
     )
-    c01 = Stack().with_children(
-        Play(c["u0"], 0.5, s["halfcos"], 50e-9),
-        ShiftPhase(c["xy0"], 0.1),
-        ShiftPhase(c["xy1"], 0.2),
+    c_group = Stack().with_children(
+        *(Play(c[f"u{i}"], 0.01 * (i + 1), s["halfcos"], 50e-9) for i in range(nu))
     )
-    x0 = Play(c["xy0"], 0.3, s["hann"], 50e-9, drag_coef=5e-10)
-    x1 = Play(c["xy1"], 0.4, s["hann"], 100e-9, drag_coef=3e-10)
-    x_group = Grid().with_children(
-        Stack([x0], alignment="center"),
-        Stack([x1], alignment="center"),
+    x_group = Stack().with_children(
+        *(Play(c[f"xy{i}"], 0.01 * (i+1), s["hann"], 50e-9, drag_coef=5e-10) for i in range(nxy))
     )
 
     schedule = Stack(duration=49.9e-6).with_children(
@@ -52,7 +47,7 @@ async def gen_n(n: int, client: PulseGenAsyncClient):
             Stack().with_children(
                 x_group,
                 Barrier(duration=15e-9),
-                c01,
+                c_group,
             ),
             count=n,
             spacing=15e-9,
@@ -63,7 +58,12 @@ async def gen_n(n: int, client: PulseGenAsyncClient):
 
     job = Request(channels, shapes, schedule)
 
+    # ws = run_schedule(job)
+    # print(len(ws))
+    t0 = time.perf_counter()
     await client.run_schedule(job)
+    t1 = time.perf_counter()
+    print(f"Time: {t1-t0:.3f}s")
 
 
 async def main():
